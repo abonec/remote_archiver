@@ -1,25 +1,31 @@
 package main
 
 import (
+	"os"
 	"flag"
 	"fmt"
-	"os"
 )
 
 func main() {
-	flag.Bool("download", true, "download mode")
-	uploadMode := flag.Bool("upload", false, "Upload mode")
-	uploadFile := flag.String("upload_file", "", "File for upload")
 	uploadKey := flag.String("upload_key", "", "Key for upload")
 	flag.Parse()
+	if *uploadKey == "" {
+		fmt.Printf("need to specify upload_key; see -h")
+		os.Exit(1)
+	}
+	downloadDir := runDownload()
 
-	if *uploadMode {
-		if *uploadFile == "" || *uploadKey == "" {
-			fmt.Println("For uploading keys upload_file and upload_key should be specified. See -h")
-			os.Exit(1)
-		}
-		runUpload(*uploadFile, *uploadKey)
-	} else {
-		runDownload()
+	zip, err := archive(downloadDir)
+	if logError(err){
+		os.Exit(1)
+	}
+	err = os.RemoveAll(downloadDir)
+	if logError(err) {
+		os.Exit(1)
+	}
+	runUpload(zip, *uploadKey)
+	err = os.Remove(zip)
+	if logError(err) {
+		os.Exit(1)
 	}
 }

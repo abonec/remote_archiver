@@ -63,7 +63,7 @@ type DownloadResult struct {
 var root = getDownloadDir()
 var parallel = getParallel()
 
-func runDownload() {
+func runDownload() string {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	queue := make(chan *DownloadTask)
@@ -119,5 +119,5 @@ func runDownload() {
 		fmt.Printf("\r%d of %d, Total amout: %s; Downloaded: %s; %s                                    ",
 			downloaded, fileSize, humanize.Bytes(uint64(size)), result.Url, humanize.Bytes(uint64(result.Size)))
 	}
-
+	return root
 }
