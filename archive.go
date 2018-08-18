@@ -1,12 +1,12 @@
 package main
 
 import (
-	"os"
-	"errors"
 	"archive/zip"
+	"errors"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
-	"io"
 	"fmt"
 )
 

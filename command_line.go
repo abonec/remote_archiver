@@ -3,7 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"os"
-	)
+)
 
 func setDownloadDir(dir *string) {
 	if *dir == "" {
