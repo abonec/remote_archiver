@@ -60,15 +60,14 @@ type DownloadResult struct {
 	Size int64
 }
 
-var root = getDownloadDir()
 var parallel = getParallel()
 
-func runDownload() string {
+func runDownload(downloadDir string) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	queue := make(chan *DownloadTask)
 	result := make(chan *DownloadResult)
-	fmt.Printf("Downloading to %s\n", root)
+	fmt.Printf("Downloading to %s\n", downloadDir)
 	fmt.Printf("Parallel downloading: %d\n", parallel)
 	var wg sync.WaitGroup
 	for i := 0; i < parallel; i++ {
@@ -93,7 +92,7 @@ func runDownload() string {
 			fmt.Printf("Given string %s; shuld be relative path and url join by triple semicolon (path;;;url)\n", line)
 			continue
 		}
-		tasks = append(tasks, NewTask(root, strings.TrimSpace(data[0]), strings.TrimSpace(data[1]), result))
+		tasks = append(tasks, NewTask(downloadDir, strings.TrimSpace(data[0]), strings.TrimSpace(data[1]), result))
 	}
 	fileSize := len(tasks)
 	go func() {
@@ -119,5 +118,4 @@ func runDownload() string {
 		fmt.Printf("\r%d of %d, Total amout: %s; Downloaded: %s; %s                                    ",
 			downloaded, fileSize, humanize.Bytes(uint64(size)), result.Url, humanize.Bytes(uint64(result.Size)))
 	}
-	return root
 }

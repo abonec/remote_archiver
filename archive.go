@@ -17,7 +17,7 @@ func archive(dir string) (string, error) {
 		return "", err
 	}
 
-	baseDir := filepath.Base(dir)
+	baseDir := "export"
 
 	if !info.IsDir() {
 		return "", errors.New("dir should be as dir")
