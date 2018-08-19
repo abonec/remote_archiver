@@ -62,7 +62,8 @@ type DownloadResult struct {
 
 var parallel = getParallel()
 
-func runDownload(downloadDir string) {
+func runDownload(downloadDir string, verbose bool) {
+	Trace.Println("Downloading started")
 	scanner := bufio.NewScanner(os.Stdin)
 
 	queue := make(chan *DownloadTask)
@@ -104,6 +105,8 @@ func runDownload(downloadDir string) {
 	go func() {
 		wg.Wait()
 		close(result)
+		fmt.Println()
+		Trace.Println("Downloading finished")
 	}()
 
 	var size int64
@@ -115,7 +118,9 @@ func runDownload(downloadDir string) {
 		}
 		size += result.Size
 		downloaded += 1
-		fmt.Printf("\r%d of %d, Total amout: %s; Downloaded: %s; %s                                    ",
-			downloaded, fileSize, humanize.Bytes(uint64(size)), result.Url, humanize.Bytes(uint64(result.Size)))
+		if verbose {
+			fmt.Printf("\r%d of %d, Total amout: %s; Downloaded: %s; %s                                    ",
+				downloaded, fileSize, humanize.Bytes(uint64(size)), result.Url, humanize.Bytes(uint64(result.Size)))
+		}
 	}
 }

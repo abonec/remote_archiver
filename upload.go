@@ -11,6 +11,7 @@ import (
 )
 
 func runUpload(file, key string) {
+	Trace.Println("Uploading started")
 	err := upload(
 		file, key,
 		os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"),
@@ -19,6 +20,7 @@ func runUpload(file, key string) {
 	if logError(err) {
 		os.Exit(1)
 	}
+	Trace.Println("Uploading finished")
 }
 
 func upload(filePath, key, awsAccessKeyId, awsSecretAccessKey, region, bucket string) error {
@@ -44,6 +46,6 @@ func upload(filePath, key, awsAccessKeyId, awsSecretAccessKey, region, bucket st
 	if err != nil {
 		return err
 	}
-	fmt.Printf("response %s", awsutil.StringValue(resp))
+	fmt.Printf("response %s\n", awsutil.StringValue(resp))
 	return nil
 }

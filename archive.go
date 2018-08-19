@@ -7,11 +7,15 @@ import (
 	"path/filepath"
 	"strings"
 	"io"
+	"fmt"
 )
 
 const target = "downloads.zip"
 
 func archive(dir string) (string, error) {
+	fmt.Println()
+	Trace.Println("Archiving started")
+	defer Trace.Println("Archiving finished")
 	info, err := os.Stat(dir)
 	if err != nil {
 		return "", err
