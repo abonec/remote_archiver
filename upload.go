@@ -35,6 +35,9 @@ func upload(filePath, key, awsAccessKeyId, awsSecretAccessKey, region, bucket st
 	svc := s3.New(session.New(), cfg)
 
 	file, err := os.Open(filePath)
+	if logError(err) {
+		os.Exit(1)
+	}
 	stats, err := file.Stat()
 	if logError(err) {
 		os.Exit(1)
