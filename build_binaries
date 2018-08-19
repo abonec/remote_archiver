@@ -1,0 +1,4 @@
+#!/bin/bash
+
+GOOS=darwin GOARCH=amd64 go build -o file_downloader.darwin
+GOOS=linux GOARCH=amd64 go build -o file_downloader.linux
