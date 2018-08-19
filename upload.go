@@ -8,6 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"os"
+	"github.com/dustin/go-humanize"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 func runUpload(file, key string) {
@@ -33,16 +35,29 @@ func upload(filePath, key, awsAccessKeyId, awsSecretAccessKey, region, bucket st
 	svc := s3.New(session.New(), cfg)
 
 	file, err := os.Open(filePath)
+	stats, err := file.Stat()
+	if logError(err) {
+		os.Exit(1)
+	}
+	Trace.Printf("Upload file size is %s", humanize.Bytes(uint64(stats.Size())))
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	params := &s3.PutObjectInput{
+	//params := &s3.PutObjectInput{
+	//	Bucket: aws.String(bucket),
+	//	Key:    aws.String(key),
+	//	Body:   file,
+	//}
+	//resp, err := svc.PutObject(params)
+	upParams := &s3manager.UploadInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
 		Body:   file,
 	}
-	resp, err := svc.PutObject(params)
+	uploader := s3manager.NewUploaderWithClient(svc)
+	resp, err := uploader.Upload(upParams)
+
 	if err != nil {
 		return err
 	}
