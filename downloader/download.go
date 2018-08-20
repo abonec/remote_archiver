@@ -22,7 +22,7 @@ func getParallel() int {
 	return size
 }
 
-func Download(inputQueue <-chan Input) <-chan archiver.Input {
+func Download(inputQueue <-chan Input, verbose bool) <-chan archiver.Input {
 	ch := make(chan archiver.Input)
 	parallel := getParallel()
 	fmt.Printf("parallel: %d", parallel)

@@ -11,7 +11,7 @@ import (
 // Input should be as one line with relative path for file and url where file
 // should be downloaded. Path and url should be joined with triple semicolon ;;;
 // i.e.: path/to.jpg;;;http://example.com/from.jpg
-func Parse(input io.Reader) <-chan downloader.Input {
+func Parse(input io.Reader, verbose bool) <-chan downloader.Input {
 	queue := make(chan downloader.Input)
 
 	go func() {
