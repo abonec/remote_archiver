@@ -44,6 +44,7 @@ func upload(body io.Reader, key, awsAccessKeyId, awsSecretAccessKey, region, buc
 		Body:   body,
 	}
 	uploader := s3manager.NewUploaderWithClient(svc)
+	uploader.PartSize = 40 * 1024 * 1024
 	resp, err := uploader.Upload(upParams)
 
 	if err != nil {
