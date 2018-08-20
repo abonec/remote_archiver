@@ -23,9 +23,9 @@ func getParallel() int {
 }
 
 func Download(inputQueue <-chan Input, verbose bool) <-chan archiver.Input {
-	ch := make(chan archiver.Input)
 	parallel := getParallel()
-	fmt.Printf("parallel: %d", parallel)
+	fmt.Printf("parallel: %d\n", parallel)
+	ch := make(chan archiver.Input, parallel)
 	var wg sync.WaitGroup
 	for i := 0; i < parallel; i++ {
 		wg.Add(1)

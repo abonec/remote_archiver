@@ -10,6 +10,7 @@ import (
 	"os"
 )
 
+// TODO: cancel upload if there is no input files
 func main() {
 	//InitLogger(os.Stdout)
 	uploadKey := flag.String("upload_key", "", "Key for upload")
