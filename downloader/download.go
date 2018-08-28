@@ -8,6 +8,8 @@ import (
 	"sync"
 	"net/http"
 	"fmt"
+	"time"
+	"io"
 )
 
 func getParallel() int {
@@ -22,6 +24,25 @@ func getParallel() int {
 	return size
 }
 
+type DownloadBody struct {
+	io.ReadCloser
+	wait chan interface{}
+}
+
+func newDownloadBody(body io.ReadCloser) *DownloadBody {
+	return &DownloadBody{ReadCloser: body, wait: make(chan interface{})}
+}
+
+func (db *DownloadBody) Close() error {
+	err := db.ReadCloser.Close()
+	close(db.wait)
+	return err
+}
+
+func (db *DownloadBody) WaitClose() {
+	<-db.wait
+}
+
 func Download(inputQueue <-chan Input, verbose bool) <-chan archiver.Input {
 	parallel := getParallel()
 	fmt.Printf("parallel: %d\n", parallel)
@@ -30,12 +51,20 @@ func Download(inputQueue <-chan Input, verbose bool) <-chan archiver.Input {
 	for i := 0; i < parallel; i++ {
 		wg.Add(1)
 		go func() {
+			transport := &http.Transport{
+			}
+			client := &http.Client{
+				Timeout:   60 * time.Second,
+				Transport: transport,
+			}
 			for input := range inputQueue {
-				resp, err := http.Get(input.Url())
+				resp, err := retryableDownload(client, input.Url())
 				if log.Error(err) {
 					log.Warningf("Error while downloading %s", input.Url())
 				}
-				ch <- &Result{resp.Body, input.Path()}
+				body := newDownloadBody(resp.Body)
+				ch <- &Result{body, input.Path()}
+				body.WaitClose()
 			}
 			wg.Done()
 		}()
@@ -45,4 +74,19 @@ func Download(inputQueue <-chan Input, verbose bool) <-chan archiver.Input {
 		close(ch)
 	}()
 	return ch
+}
+
+const RETRIES = 5
+
+func retryableDownload(client *http.Client, url string) (*http.Response, error) {
+	var err error
+	for tries := 0; tries < RETRIES; tries++ {
+		resp, err := client.Get(url)
+		if err != nil {
+			fmt.Println("got exception", err)
+			continue
+		}
+		return resp, nil
+	}
+	return nil, err
 }

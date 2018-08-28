@@ -7,7 +7,7 @@ import (
 	"archive/zip"
 	"path/filepath"
 	"fmt"
-)
+	)
 
 const baseDir = "export"
 
@@ -33,9 +33,9 @@ func Archive(inputQueue <-chan Input, verbose bool) io.Reader {
 			if verbose {
 				fmt.Printf("%d files archived\r", i)
 			}
+			input.Reader().Close()
 		}
 		fmt.Println()
 	}()
-
 	return pr
 }
