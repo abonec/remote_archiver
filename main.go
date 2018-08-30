@@ -1,35 +1,31 @@
 package main
 
 import (
-	"os"
-	"flag"
 	"fmt"
+	"github.com/abonec/file_downloader/archiver"
+	"github.com/abonec/file_downloader/config"
+	"github.com/abonec/file_downloader/downloader"
+	"github.com/abonec/file_downloader/parser"
+	"github.com/abonec/file_downloader/tracing"
+	"github.com/abonec/file_downloader/uploader"
+	"os"
 )
 
+// TODO: cancel upload if there is no input files
 func main() {
-	InitLogger(os.Stdout)
-	uploadKey := flag.String("upload_key", "", "Key for upload")
-	downloadDir := flag.String("download_dir", "", "Dir for download")
-	verbose := flag.Bool("verbose", false, "show progress of downloading")
-	setDownloadDir(downloadDir)
-	flag.Parse()
-	if *uploadKey == "" {
-		fmt.Printf("need to specify upload_key; see -h")
+	cfg, err := config.Init()
+	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
-	runDownload(*downloadDir, *verbose)
 
-	zip, err := archive(*downloadDir)
-	if logError(err){
+	if tracing.Start(cfg) != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
-	err = os.RemoveAll(*downloadDir)
-	if logError(err) {
-		os.Exit(1)
-	}
-	runUpload(zip, *uploadKey)
-	err = os.Remove(zip)
-	if logError(err) {
-		os.Exit(1)
-	}
+
+	inputQueue := parser.Parse(os.Stdin)
+	downloadQueue := downloader.Download(inputQueue)
+	reader := archiver.Archive(downloadQueue, cfg)
+	uploader.Upload(reader, cfg)
 }
