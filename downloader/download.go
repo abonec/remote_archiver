@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"time"
 	"io"
-)
+	)
 
 func getParallel() int {
 	env := os.Getenv("PARALLEL")
@@ -43,7 +43,7 @@ func (db *DownloadBody) WaitClose() {
 	<-db.wait
 }
 
-func Download(inputQueue <-chan Input, verbose bool) <-chan archiver.Input {
+func Download(inputQueue <-chan Input) <-chan archiver.Input {
 	parallel := getParallel()
 	fmt.Printf("parallel: %d\n", parallel)
 	ch := make(chan archiver.Input, parallel)

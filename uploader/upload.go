@@ -11,13 +11,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awsutil"
 	"io"
 	"github.com/abonec/file_downloader/log"
+	"github.com/abonec/file_downloader/config"
 )
 
-func Upload(body io.Reader, uploadKey string, verbose bool) {
+func Upload(body io.Reader, cfg config.Config) {
 	err := upload(
-		body, uploadKey,
-		os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"),
-		os.Getenv("REGION"), os.Getenv("BUCKET"),
+		body, cfg.UploadKey(),
+		cfg.AwsAccessKeyId(), cfg.AwsSecretAccessKey(),
+		cfg.Region(), cfg.Bucket(),
 	)
 	if log.Error(err) {
 		os.Exit(1)

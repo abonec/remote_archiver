@@ -7,11 +7,12 @@ import (
 	"archive/zip"
 	"path/filepath"
 	"fmt"
-	)
+	"github.com/abonec/file_downloader/config"
+)
 
 const baseDir = "export"
 
-func Archive(inputQueue <-chan Input, verbose bool) io.Reader {
+func Archive(inputQueue <-chan Input, cfg config.Config) io.Reader {
 	pr, pw := io.Pipe()
 
 	arch := zip.NewWriter(pw)
@@ -30,7 +31,7 @@ func Archive(inputQueue <-chan Input, verbose bool) io.Reader {
 			}
 			_, err = io.Copy(writer, input.Reader())
 			i++
-			if verbose {
+			if cfg.Verbose() {
 				fmt.Printf("%d files archived\r", i)
 			}
 			input.Reader().Close()
