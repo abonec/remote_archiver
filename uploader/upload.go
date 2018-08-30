@@ -1,7 +1,6 @@
 package uploader
 
 import (
-	"os"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -10,20 +9,16 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws/awsutil"
 	"io"
-	"github.com/abonec/file_downloader/log"
 	"github.com/abonec/file_downloader/config"
 )
 
-func Upload(body io.Reader, cfg config.Config) {
+func Upload(body io.Reader, cfg config.Config) (error) {
 	err := upload(
 		body, cfg.UploadKey(),
 		cfg.AwsAccessKeyId(), cfg.AwsSecretAccessKey(),
 		cfg.Region(), cfg.Bucket(),
 	)
-	if log.Error(err) {
-		os.Exit(1)
-	}
-
+	return err
 }
 
 func upload(body io.Reader, key, awsAccessKeyId, awsSecretAccessKey, region, bucket string) error {

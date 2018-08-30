@@ -5,6 +5,7 @@ import (
 	"github.com/abonec/file_downloader/archiver"
 	"github.com/abonec/file_downloader/config"
 	"github.com/abonec/file_downloader/downloader"
+	"github.com/abonec/file_downloader/log"
 	"github.com/abonec/file_downloader/parser"
 	"github.com/abonec/file_downloader/tracing"
 	"github.com/abonec/file_downloader/uploader"
@@ -27,5 +28,8 @@ func main() {
 	inputQueue := parser.Parse(os.Stdin)
 	downloadQueue := downloader.Download(inputQueue)
 	reader := archiver.Archive(downloadQueue, cfg)
-	uploader.Upload(reader, cfg)
+	err = uploader.Upload(reader, cfg)
+	if log.Error(err) {
+		os.Exit(1)
+	}
 }
