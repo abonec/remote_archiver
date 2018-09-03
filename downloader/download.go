@@ -10,7 +10,8 @@ import (
 	"fmt"
 	"time"
 	"io"
-	)
+	"bytes"
+)
 
 func getParallel() int {
 	env := os.Getenv("PARALLEL")
@@ -25,18 +26,18 @@ func getParallel() int {
 }
 
 type DownloadBody struct {
-	io.ReadCloser
+	io.Reader
 	wait chan interface{}
 }
 
-func newDownloadBody(body io.ReadCloser) *DownloadBody {
-	return &DownloadBody{ReadCloser: body, wait: make(chan interface{})}
+func newDownloadBody(body io.Reader) *DownloadBody {
+	return &DownloadBody{Reader: body, wait: make(chan interface{})}
 }
 
 func (db *DownloadBody) Close() error {
-	err := db.ReadCloser.Close()
+	//err := db.ReadCloser.Close()
 	close(db.wait)
-	return err
+	return nil
 }
 
 func (db *DownloadBody) WaitClose() {
@@ -51,20 +52,18 @@ func Download(inputQueue <-chan Input) <-chan archiver.Input {
 	for i := 0; i < parallel; i++ {
 		wg.Add(1)
 		go func() {
-			transport := &http.Transport{
-			}
+			//transport := &http.Transport{
+			//}
 			client := &http.Client{
 				Timeout:   60 * time.Second,
-				Transport: transport,
+				//Transport: transport,
 			}
 			for input := range inputQueue {
-				resp, err := retryableDownload(client, input.Url())
+				reader, err := retryableDownload(client, input.Url())
 				if log.Error(err) {
 					log.Warningf("Error while downloading %s", input.Url())
 				}
-				body := newDownloadBody(resp.Body)
-				ch <- &Result{body, input.Path()}
-				body.WaitClose()
+				ch <- &Result{reader, input.Path()}
 			}
 			wg.Done()
 		}()
@@ -78,15 +77,20 @@ func Download(inputQueue <-chan Input) <-chan archiver.Input {
 
 const RETRIES = 5
 
-func retryableDownload(client *http.Client, url string) (*http.Response, error) {
+func retryableDownload(client *http.Client, url string) (io.Reader, error) {
 	var err error
 	for tries := 0; tries < RETRIES; tries++ {
 		resp, err := client.Get(url)
 		if err != nil {
-			fmt.Println("got exception", err)
 			continue
 		}
-		return resp, nil
+		buf := bytes.NewBuffer(nil)
+		_, err = io.Copy(buf, resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			continue
+		}
+		return buf, nil
 	}
 	return nil, err
 }

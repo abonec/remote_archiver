@@ -34,7 +34,6 @@ func Archive(inputQueue <-chan Input, cfg config.Config) io.Reader {
 			if cfg.Verbose() {
 				fmt.Printf("%d files archived\r", i)
 			}
-			input.Reader().Close()
 		}
 		fmt.Println()
 	}()

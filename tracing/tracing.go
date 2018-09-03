@@ -18,7 +18,6 @@ func Start(cfg config.Config) error {
 		return err
 	}
 	trace.Start(file)
-	defer trace.Stop()
 
 	sigs := make(chan os.Signal)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)

@@ -3,11 +3,11 @@ package downloader
 import "io"
 
 type Result struct {
-	reader io.ReadCloser
+	reader io.Reader
 	path   string
 }
 
-func (r *Result) Reader() io.ReadCloser {
+func (r *Result) Reader() io.Reader{
 	return r.reader
 }
 
