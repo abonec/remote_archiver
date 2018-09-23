@@ -1,21 +1,22 @@
 package archiver
 
 import (
-	"io"
-	"os"
-	"github.com/abonec/file_downloader/log"
 	"archive/zip"
-	"path/filepath"
 	"fmt"
 	"github.com/abonec/file_downloader/config"
+	"github.com/abonec/file_downloader/log"
+	"io"
+	"os"
+	"path/filepath"
 )
 
 const baseDir = "export"
 
-func Archive(inputQueue <-chan Input, cfg config.Config) io.Reader {
+func Archive(inputQueue <-chan Input, cfg config.Config) (io.Reader, <-chan int64) {
 	pr, pw := io.Pipe()
 
 	arch := zip.NewWriter(pw)
+	ch := make(chan int64)
 	go func() {
 		defer pw.Close()
 		defer arch.Close()
@@ -29,14 +30,15 @@ func Archive(inputQueue <-chan Input, cfg config.Config) io.Reader {
 			if log.Error(err) {
 				os.Exit(1)
 			}
-			_, err = io.Copy(writer, input.Reader())
+			n, err := io.Copy(writer, input)
+			ch <- n
 			i++
+			input.Close()
 			if cfg.Verbose() {
 				fmt.Printf("%d files archived\r", i)
 			}
-			input.Reader().Close()
 		}
 		fmt.Println()
 	}()
-	return pr
+	return pr, ch
 }

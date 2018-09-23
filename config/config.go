@@ -1,10 +1,10 @@
 package config
 
 import (
-	"flag"
 	"errors"
-	"os"
+	"flag"
 	"fmt"
+	"os"
 )
 
 var (

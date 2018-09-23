@@ -1,17 +1,17 @@
 package uploader
 
 import (
-	"os"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws/awsutil"
-	"io"
-	"github.com/abonec/file_downloader/log"
 	"github.com/abonec/file_downloader/config"
+	"github.com/abonec/file_downloader/log"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awsutil"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"io"
+	"os"
 )
 
 func Upload(body io.Reader, cfg config.Config) {
@@ -51,6 +51,6 @@ func upload(body io.Reader, key, awsAccessKeyId, awsSecretAccessKey, region, buc
 	if err != nil {
 		return err
 	}
-	fmt.Printf("response %s\n", awsutil.StringValue(resp))
+	fmt.Printf("\nresponse %s\n", awsutil.StringValue(resp))
 	return nil
 }

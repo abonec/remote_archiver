@@ -1,11 +1,11 @@
 package parser
 
 import (
-	"io"
-	"github.com/abonec/file_downloader/downloader"
-	"strings"
 	"bufio"
-	)
+	"github.com/abonec/file_downloader/downloader"
+	"io"
+	"strings"
+)
 
 // Parse parses input for path and urls and return channel with the results.
 // Input should be as one line with relative path for file and url where file

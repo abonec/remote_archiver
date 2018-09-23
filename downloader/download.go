@@ -1,16 +1,17 @@
 package downloader
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/abonec/file_downloader/archiver"
 	"github.com/abonec/file_downloader/log"
+	"io"
+	"net/http"
 	"os"
 	"strconv"
 	"sync"
-	"net/http"
-	"fmt"
 	"time"
-	"io"
-	)
+)
 
 func getParallel() int {
 	env := os.Getenv("PARALLEL")
@@ -25,46 +26,46 @@ func getParallel() int {
 }
 
 type DownloadBody struct {
-	io.ReadCloser
+	io.Reader
 	wait chan interface{}
 }
 
-func newDownloadBody(body io.ReadCloser) *DownloadBody {
-	return &DownloadBody{ReadCloser: body, wait: make(chan interface{})}
-}
-
 func (db *DownloadBody) Close() error {
-	err := db.ReadCloser.Close()
+	//err := db.ReadCloser.Close()
 	close(db.wait)
-	return err
+	return nil
 }
 
 func (db *DownloadBody) WaitClose() {
 	<-db.wait
 }
 
-func Download(inputQueue <-chan Input) <-chan archiver.Input {
+func Download(inputQueue <-chan Input) (<-chan archiver.Input, <-chan int64) {
+	pool := &sync.Pool{New: func() interface{} {
+		//ar := make([]byte, 0, 10000)
+		return new(bytes.Buffer)
+	}}
 	parallel := getParallel()
 	fmt.Printf("parallel: %d\n", parallel)
 	ch := make(chan archiver.Input, parallel)
+	bytesDownloadedChan := make(chan int64)
 	var wg sync.WaitGroup
 	for i := 0; i < parallel; i++ {
 		wg.Add(1)
 		go func() {
-			transport := &http.Transport{
-			}
+			//transport := &http.Transport{
+			//}
 			client := &http.Client{
-				Timeout:   60 * time.Second,
-				Transport: transport,
+				Timeout: 60 * time.Second,
+				//Transport: transport,
 			}
 			for input := range inputQueue {
-				resp, err := retryableDownload(client, input.Url())
+				buffer, bytesDownloaded, err := retryableDownload(client, input.Url(), pool)
 				if log.Error(err) {
 					log.Warningf("Error while downloading %s", input.Url())
 				}
-				body := newDownloadBody(resp.Body)
-				ch <- &Result{body, input.Path()}
-				body.WaitClose()
+				ch <- &Result{buffer: buffer, path: input.Path(), pool: pool}
+				bytesDownloadedChan <- bytesDownloaded
 			}
 			wg.Done()
 		}()
@@ -73,20 +74,26 @@ func Download(inputQueue <-chan Input) <-chan archiver.Input {
 		wg.Wait()
 		close(ch)
 	}()
-	return ch
+	return ch, bytesDownloadedChan
 }
 
 const RETRIES = 5
 
-func retryableDownload(client *http.Client, url string) (*http.Response, error) {
+func retryableDownload(client *http.Client, url string, pool *sync.Pool) (*bytes.Buffer, int64, error) {
 	var err error
 	for tries := 0; tries < RETRIES; tries++ {
 		resp, err := client.Get(url)
 		if err != nil {
-			fmt.Println("got exception", err)
 			continue
 		}
-		return resp, nil
+		buf := pool.Get().(*bytes.Buffer)
+		buf.Reset()
+		n, err := io.Copy(buf, resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			continue
+		}
+		return buf, n, nil
 	}
-	return nil, err
+	return nil, 0, err
 }
