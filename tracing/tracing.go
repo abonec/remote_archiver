@@ -1,11 +1,11 @@
 package tracing
 
 import (
+	"fmt"
 	"github.com/abonec/file_downloader/config"
 	"os"
-	"fmt"
-	"runtime/trace"
 	"os/signal"
+	"runtime/trace"
 	"syscall"
 )
 

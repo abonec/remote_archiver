@@ -7,7 +7,7 @@ type Result struct {
 	path   string
 }
 
-func (r *Result) Reader() io.Reader{
+func (r *Result) Reader() io.Reader {
 	return r.reader
 }
 

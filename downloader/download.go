@@ -1,16 +1,16 @@
 package downloader
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/abonec/file_downloader/archiver"
 	"github.com/abonec/file_downloader/log"
+	"io"
+	"net/http"
 	"os"
 	"strconv"
 	"sync"
-	"net/http"
-	"fmt"
 	"time"
-	"io"
-	"bytes"
 )
 
 func getParallel() int {
@@ -30,10 +30,6 @@ type DownloadBody struct {
 	wait chan interface{}
 }
 
-func newDownloadBody(body io.Reader) *DownloadBody {
-	return &DownloadBody{Reader: body, wait: make(chan interface{})}
-}
-
 func (db *DownloadBody) Close() error {
 	//err := db.ReadCloser.Close()
 	close(db.wait)
@@ -44,10 +40,11 @@ func (db *DownloadBody) WaitClose() {
 	<-db.wait
 }
 
-func Download(inputQueue <-chan Input) <-chan archiver.Input {
+func Download(inputQueue <-chan Input) (<-chan archiver.Input, <-chan int64) {
 	parallel := getParallel()
 	fmt.Printf("parallel: %d\n", parallel)
 	ch := make(chan archiver.Input, parallel)
+	bytesDownloadedChan := make(chan int64)
 	var wg sync.WaitGroup
 	for i := 0; i < parallel; i++ {
 		wg.Add(1)
@@ -55,15 +52,16 @@ func Download(inputQueue <-chan Input) <-chan archiver.Input {
 			//transport := &http.Transport{
 			//}
 			client := &http.Client{
-				Timeout:   60 * time.Second,
+				Timeout: 60 * time.Second,
 				//Transport: transport,
 			}
 			for input := range inputQueue {
-				reader, err := retryableDownload(client, input.Url())
+				reader, bytesDownloaded, err := retryableDownload(client, input.Url())
 				if log.Error(err) {
 					log.Warningf("Error while downloading %s", input.Url())
 				}
 				ch <- &Result{reader, input.Path()}
+				bytesDownloadedChan <- bytesDownloaded
 			}
 			wg.Done()
 		}()
@@ -72,12 +70,12 @@ func Download(inputQueue <-chan Input) <-chan archiver.Input {
 		wg.Wait()
 		close(ch)
 	}()
-	return ch
+	return ch, bytesDownloadedChan
 }
 
 const RETRIES = 5
 
-func retryableDownload(client *http.Client, url string) (io.Reader, error) {
+func retryableDownload(client *http.Client, url string) (io.Reader, int64, error) {
 	var err error
 	for tries := 0; tries < RETRIES; tries++ {
 		resp, err := client.Get(url)
@@ -85,12 +83,12 @@ func retryableDownload(client *http.Client, url string) (io.Reader, error) {
 			continue
 		}
 		buf := bytes.NewBuffer(nil)
-		_, err = io.Copy(buf, resp.Body)
+		n, err := io.Copy(buf, resp.Body)
 		resp.Body.Close()
 		if err != nil {
 			continue
 		}
-		return buf, nil
+		return buf, n, nil
 	}
-	return nil, err
+	return nil, 0, err
 }
