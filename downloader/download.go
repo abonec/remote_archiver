@@ -41,6 +41,10 @@ func (db *DownloadBody) WaitClose() {
 }
 
 func Download(inputQueue <-chan Input) (<-chan archiver.Input, <-chan int64) {
+	pool := &sync.Pool{New: func() interface{} {
+		//ar := make([]byte, 0, 10000)
+		return new(bytes.Buffer)
+	}}
 	parallel := getParallel()
 	fmt.Printf("parallel: %d\n", parallel)
 	ch := make(chan archiver.Input, parallel)
@@ -56,11 +60,11 @@ func Download(inputQueue <-chan Input) (<-chan archiver.Input, <-chan int64) {
 				//Transport: transport,
 			}
 			for input := range inputQueue {
-				reader, bytesDownloaded, err := retryableDownload(client, input.Url())
+				buffer, bytesDownloaded, err := retryableDownload(client, input.Url(), pool)
 				if log.Error(err) {
 					log.Warningf("Error while downloading %s", input.Url())
 				}
-				ch <- &Result{reader, input.Path()}
+				ch <- &Result{buffer, input.Path(), pool}
 				bytesDownloadedChan <- bytesDownloaded
 			}
 			wg.Done()
@@ -75,14 +79,15 @@ func Download(inputQueue <-chan Input) (<-chan archiver.Input, <-chan int64) {
 
 const RETRIES = 5
 
-func retryableDownload(client *http.Client, url string) (io.Reader, int64, error) {
+func retryableDownload(client *http.Client, url string, pool *sync.Pool) (*bytes.Buffer, int64, error) {
 	var err error
 	for tries := 0; tries < RETRIES; tries++ {
 		resp, err := client.Get(url)
 		if err != nil {
 			continue
 		}
-		buf := bytes.NewBuffer(nil)
+		buf := pool.Get().(*bytes.Buffer)
+		buf.Reset()
 		n, err := io.Copy(buf, resp.Body)
 		resp.Body.Close()
 		if err != nil {

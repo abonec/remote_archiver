@@ -1,16 +1,25 @@
 package downloader
 
-import "io"
+import (
+	"bytes"
+	"io"
+	"sync"
+)
 
 type Result struct {
-	reader io.Reader
+	buffer *bytes.Buffer
 	path   string
+	pool   *sync.Pool
 }
 
 func (r *Result) Reader() io.Reader {
-	return r.reader
+	return r.buffer
 }
 
 func (r *Result) Path() string {
 	return r.path
+}
+
+func (r *Result) Close() {
+	r.pool.Put(r.buffer)
 }

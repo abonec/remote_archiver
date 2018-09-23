@@ -33,6 +33,7 @@ func Archive(inputQueue <-chan Input, cfg config.Config) (io.Reader, <-chan int6
 			n, err := io.Copy(writer, input.Reader())
 			ch <- n
 			i++
+			input.Close()
 			if cfg.Verbose() {
 				fmt.Printf("%d files archived\r", i)
 			}
