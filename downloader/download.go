@@ -64,7 +64,7 @@ func Download(inputQueue <-chan Input) (<-chan archiver.Input, <-chan int64) {
 				if log.Error(err) {
 					log.Warningf("Error while downloading %s", input.Url())
 				}
-				ch <- &Result{buffer, input.Path(), pool}
+				ch <- &Result{buffer: buffer, path: input.Path(), pool: pool}
 				bytesDownloadedChan <- bytesDownloaded
 			}
 			wg.Done()

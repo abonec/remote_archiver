@@ -30,7 +30,7 @@ func Archive(inputQueue <-chan Input, cfg config.Config) (io.Reader, <-chan int6
 			if log.Error(err) {
 				os.Exit(1)
 			}
-			n, err := io.Copy(writer, input.Reader())
+			n, err := io.Copy(writer, input)
 			ch <- n
 			i++
 			input.Close()

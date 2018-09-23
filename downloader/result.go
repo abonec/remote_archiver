@@ -2,7 +2,6 @@ package downloader
 
 import (
 	"bytes"
-	"io"
 	"sync"
 )
 
@@ -12,14 +11,14 @@ type Result struct {
 	pool   *sync.Pool
 }
 
-func (r *Result) Reader() io.Reader {
-	return r.buffer
-}
-
 func (r *Result) Path() string {
 	return r.path
 }
+func (r *Result) Read(p []byte) (n int, err error) {
+	return r.buffer.Read(p)
+}
 
-func (r *Result) Close() {
+func (r *Result) Close() error {
 	r.pool.Put(r.buffer)
+	return nil
 }
